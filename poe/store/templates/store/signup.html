@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Prime Accessories POS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'store/CSS/auth.css' %}">
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Animated Background -->
+        <div class="background-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+        </div>
+
+        <!-- Signup Card -->
+        <div class="auth-card animate-slide-up">
+            <div class="auth-header">
+                <div class="logo">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h1>Prime Accessories</h1>
+                </div>
+                <h2>Create Account</h2>
+                <p>Join us to manage your business</p>
+            </div>
+
+            <form id="signupForm" class="auth-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupUsername">
+                            <i class="fas fa-user"></i>
+                            Username
+                        </label>
+                        <input 
+                            type="text" 
+                            id="signupUsername" 
+                            placeholder="Username" 
+                            required
+                            minlength="3"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email
+                    </label>
+                    <input 
+                        type="email" 
+                        id="signupEmail" 
+                        placeholder="Email address" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="signupPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <div class="password-input">
+                        <input 
+                            type="password" 
+                            id="signupPassword" 
+                            placeholder="Password" 
+                            required
+                            minlength="8"
+                            pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+                        >
+                        <button type="button" class="toggle-password" onclick="togglePassword('signupPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-requirements-compact">
+                        <span id="req-length"><i class="fas fa-circle"></i> 8+ chars</span>
+                        <span id="req-letter"><i class="fas fa-circle"></i> Letter</span>
+                        <span id="req-number"><i class="fas fa-circle"></i> Number</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">
+                        <i class="fas fa-lock"></i>
+                        Confirm Password
+                    </label>
+                    <div class="password-input">
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            placeholder="Confirm password" 
+                            required
+                        >
+                        <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <small id="passwordMatch" class="match-message"></small>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <span>I agree to <a href="#">Terms</a> & <a href="#">Privacy</a></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-user-plus"></i>
+                    Create Account
+                </button>
+
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <div class="social-login-compact">
+                    <button type="button" class="btn-social btn-google">
+                        <i class="fab fa-google"></i>
+                    </button>
+                    <button type="button" class="btn-social btn-facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </button>
+                </div>
+
+                <p class="auth-footer">
+                    Already have an account? 
+                    <a href="{% url 'login' %}">Sign In</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Account created successfully!</span>
+    </div>
+
+    <script src="{% static 'store/JS/auth.js' %}"></script>
+</body>
+</html>

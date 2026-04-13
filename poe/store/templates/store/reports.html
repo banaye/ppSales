@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Reports | Prime Accessories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'store/JS/reports.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="{% static 'store/CSS/reports.css' %}">
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser && !window.location.pathname.includes('/login.html') && !window.location.pathname.includes('/signup.html')) {
+            window.location.href = '/login.html';
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo"><h2>Prime Accessories</h2></div>
+            <nav class="nav-menu">
+                <a href="{% url 'index' %}" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="{% url 'pos' %}" class="nav-item"><i class="fas fa-cash-register"></i> POS</a>
+                <a href="{% url 'inventory_list' %}" class="nav-item"><i class="fas fa-boxes"></i> Inventory</a>
+                <a href="{% url 'sales_list' %}" class="nav-item"><i class="fas fa-chart-line"></i> Sales</a>
+                <a href="{% url 'reports_list' %}" class="nav-item active"><i class="fas fa-file-alt"></i> Reports</a>
+                <a href="{% url 'settings' %}" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
+            </nav>
+            <div class="user-profile">
+                <button onclick="logout()" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Reports & Analytics</h1>
+                <div class="header-actions">
+                    <button class="btn btn-outline" id="printBtn"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn btn-primary" id="exportPdfBtn"><i class="fas fa-download"></i> Export PDF</button>
+                </div>
+            </header>
+
+            <!-- Report Content Container for PDF Export -->
+            <div id="reportContent">
+                <!-- Filter Section -->
+                <div class="card filter-section">
+                    <div class="filter-header">
+                        <h3><i class="fas fa-filter"></i> Filter Options</h3>
+                        <button class="btn btn-text" id="clearFilters"><i class="fas fa-undo"></i> Clear All</button>
+                    </div>
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label>Report Type <span class="required">*</span></label>
+                            <select id="reportType">
+                                <option value="sales">Sales Report</option>
+                                <option value="inventory">Inventory Report</option>
+                                <option value="cashier">Cashier Report</option>
+                                <option value="product">Product Report</option>
+                                <option value="payment">Payment Method Report</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Time Period <span class="required">*</span></label>
+                            <select id="timePeriod">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="yearly">Yearly</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                        <div class="filter-group" id="fromDateGroup" style="display: none;">
+                            <label>From Date</label>
+                            <input type="date" id="fromDate">
+                        </div>
+                        <div class="filter-group" id="toDateGroup" style="display: none;">
+                            <label>To Date</label>
+                            <input type="date" id="toDate">
+                        </div>
+                        <div class="filter-group">
+                            <label>Category</label>
+                            <select id="category">
+                                <option value="all">All Categories</option>
+                                <option value="smartphones">Smartphones</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="tablets">Tablets</option>
+                                <option value="chargers">Chargers & Cables</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Payment Method</label>
+                            <select id="paymentMethod">
+                                <option value="all">All Methods</option>
+                                <option value="cash">Cash</option>
+                                <option value="momo">Mobile Money</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="card">Card</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Status</label>
+                            <select id="status">
+                                <option value="all">All Status</option>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="refunded">Refunded</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-primary" id="generateReport"><i class="fas fa-chart-bar"></i> Generate Report</button>
+                        <button class="btn btn-outline" id="resetFilters"><i class="fas fa-redo"></i> Reset</button>
+                    </div>
+                </div>
+
+                <!-- Stats Summary -->
+                <div class="stats-grid">
+                    <div class="card stat-card">
+                        <div class="stat-icon revenue"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Revenue</h3>
+                            <div class="stat-value" id="totalRevenue">GH₵ 45,250.00</div>
+                            <div class="stat-change positive"><i class="fas fa-arrow-up"></i> 18% vs last period</div>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon orders"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Orders</h3>
+                            <div class="stat-value" id="totalOrders">342</div>
+                            <div class="stat-change positive"><i class="fas fa-arrow-up"></i> 12% vs last period</div>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon avg"><i class="fas fa-calculator"></i></div>
+                        <div class="stat-info">
+                            <h3>Avg Order Value</h3>
+                            <div class="stat-value" id="avgOrderValue">GH₵ 132.31</div>
+                            <div class="stat-change positive"><i class="fas fa-arrow-up"></i> 3% vs last period</div>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon profit"><i class="fas fa-coins"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Profit</h3>
+                            <div class="stat-value" id="totalProfit">GH₵ 12,580.00</div>
+                            <div class="stat-change positive"><i class="fas fa-arrow-up"></i> 22% vs last period</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Sales Trend Chart -->
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-line"></i> Sales Trend Analysis</h3>
+                        <div class="chart-tabs">
+                            <button class="tab-btn active" data-chart="sales">Sales</button>
+                            <button class="tab-btn" data-chart="orders">Orders</button>
+                            <button class="tab-btn" data-chart="profit">Profit</button>
+                        </div>
+                    </div>
+                    <div class="chart-container-large">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                    <div class="chart-legend" id="chartLegend"></div>
+                </div>
+
+                <!-- Secondary Charts Row -->
+                <div class="charts-row">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie"></i> Revenue by Category</h3>
+                        </div>
+                        <div class="chart-container-medium">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-credit-card"></i> Payment Methods Distribution</h3>
+                        </div>
+                        <div class="chart-container-medium">
+                            <canvas id="paymentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Analytics -->
+                <div class="charts-row">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Daily Sales Breakdown</h3>
+                        </div>
+                        <div class="chart-container-medium">
+                            <canvas id="dailySalesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-users"></i> Top Performing Cashiers</h3>
+                        </div>
+                        <div class="chart-container-medium">
+                            <canvas id="cashierChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Data Table -->
+                <div class="card table-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-table"></i> Detailed Transaction Data</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-outline btn-sm" id="exportCsv"><i class="fas fa-file-csv"></i> Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="reportTable">
+                            <thead>
+                                <tr>
+                                    <th>Receipt #</th>
+                                    <th>Date & Time</th>
+                                    <th>Cashier</th>
+                                    <th>Category</th>
+                                    <th>Payment Method</th>
+                                    <th>Items</th>
+                                    <th>Subtotal</th>
+                                    <th>Tax</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination">
+                        <span id="showingInfo">Showing 1 to 10 of 342 entries</span>
+                        <div class="pages" id="paginationControls"></div>
+                    </div>
+                </div>
+
+                <!-- Report Summary Section -->
+                <div class="card summary-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-clipboard-list"></i> Report Summary</h3>
+                        <span class="report-date" id="reportDateRange"></span>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <label>Report Generated:</label>
+                            <span id="generatedDate"></span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Report Type:</label>
+                            <span id="summaryReportType">Sales Report</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Time Period:</label>
+                            <span id="summaryTimePeriod">Monthly</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Category Filter:</label>
+                            <span id="summaryCategory">All Categories</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Best Selling Category:</label>
+                            <span id="bestCategory">Smartphones</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Peak Sales Day:</label>
+                            <span id="peakDay">Saturday</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 Prime Accessories POS System. All rights reserved.</p>
+            </footer>
+        </main>
+    </div>
+</body>
+</html>

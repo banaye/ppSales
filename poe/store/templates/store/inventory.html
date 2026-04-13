@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Inventory | Prime Accessories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'store/CSS/inventory.css' %}">
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser && !window.location.pathname.includes('/login.html') && !window.location.pathname.includes('/signup.html')) {
+            window.location.href = '/login.html';
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>Prime Accessories</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="{% url 'index' %}" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="{% url 'pos' %}" class="nav-item"><i class="fas fa-cash-register"></i> POS</a>
+                <a href="{% url 'inventory_list' %}" class="nav-item active"><i class="fas fa-boxes"></i> Inventory</a>
+                <a href="{% url 'sales_list' %}" class="nav-item"><i class="fas fa-chart-line"></i> Sales</a>
+                <a href="{% url 'reports_list' %}" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
+                <a href="{% url 'settings' %}" class="nav-item"><i class="fas fa-cog"></i> System Settings</a>
+            </nav>
+            <div class="user-profile">
+                <button onclick="logout()" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Inventory Management</h1>
+            </header>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <i class="fas fa-plus"></i> Add New Item
+                </button>
+                <button class="btn btn-secondary" onclick="openViewModal()">
+                    <i class="fas fa-eye"></i> View Products
+                </button>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Total Products</span>
+                        <span class="stat-value" id="totalProducts">156</span>
+                    </div>
+                    <div class="stat-icon" style="background: #eef2ff; color: #6366f1;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">In Stock</span>
+                        <span class="stat-value in-stock" id="inStockProducts">149</span>
+                    </div>
+                    <div class="stat-icon" style="background: #ecfdf5; color: #10b981;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Low Stock</span>
+                        <span class="stat-value low-stock" id="lowStockProducts">5</span>
+                    </div>
+                    <div class="stat-icon" style="background: #fffbeb; color: #f59e0b;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Out of Stock</span>
+                        <span class="stat-value out-stock" id="outOfStockProducts">2</span>
+                    </div>
+                    <div class="stat-icon" style="background: #fef2f2; color: #ef4444;">
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Products -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Products from Database</h3>
+                </div>
+                <div class="products-grid">
+                    {% for product in products %}
+                    <div class="product-card">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                        <div class="no-image">No Image</div>
+                        {% endif %}
+                        <h4>{{ product.name }}</h4>
+                        <p>{{ product.description }}</p>
+                        <p>Price: GH₵ {{ product.price }}</p>
+                        <p>Stock: {{ product.stock }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-section">
+                <select id="categoryFilter" onchange="filterProducts()">
+                    <option value="all">All Categories</option>
+                    <option value="smartphones">Smartphones</option>
+                    <option value="accessories">Accessories</option>
+                    <option value="tablets">Tablets</option>
+                </select>
+                <select id="brandFilter" onchange="filterProducts()">
+                    <option value="all">All Brands</option>
+                    <option value="apple">Apple</option>
+                    <option value="samsung">Samsung</option>
+                    <option value="xiaomi">Xiaomi</option>
+                </select>
+                <select id="statusFilter" onchange="filterProducts()">
+                    <option value="all">All Status</option>
+                    <option value="in-stock">In Stock</option>
+                    <option value="low-stock">Low Stock</option>
+                    <option value="out-stock">Out of Stock</option>
+                </select>
+            </div>
+
+            <!-- Products Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Products</h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>SKU</th>
+                                <th>Category</th>
+                                <th>Brand</th>
+                                <th>Price (GH₵)</th>
+                                <th>Total Units</th>
+                                <th>Boxes</th>
+                                <th>Per Box</th>
+                                <th>Reorder Level</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <!-- Products will be dynamically loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <span id="showingInfo">Showing 1 to 5 of 156 entries</span>
+                    <div class="pages">1 2 3 ... 32</div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="info-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Categories</h3>
+                        <button class="btn btn-sm" onclick="openCategoryModal()">+ Add Category</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody">
+                            <tr>
+                                <td>CAT-001</td>
+                                <td>Smartphones</td>
+                                <td>Mobile phones & devices</td>
+                                <td>Jan 10, 2026</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>CAT-002</td>
+                                <td>Accessories</td>
+                                <td>Phone accessories</td>
+                                <td>Jan 10, 2026</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>CAT-003</td>
+                                <td>Tablets</td>
+                                <td>Tablet devices</td>
+                                <td>Jan 15, 2026</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Brands Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Brands</h3>
+                        <button class="btn btn-sm" onclick="openBrandModal()">+ Add Brand</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="brandsTableBody">
+                            <tr>
+                                <td>BRD-001</td>
+                                <td>Apple</td>
+                                <td>Apple Inc. products</td>
+                                <td>Jan 10, 2026</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>BRD-002</td>
+                                <td>Samsung</td>
+                                <td>Samsung Electronics</td>
+                                <td>Jan 10, 2026</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>BRD-003</td>
+                                <td>Xiaomi</td>
+                                <td>Xiaomi Corporation</td>
+                                <td>Jan 12, 2026</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal-overlay" id="addProductModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add New Item</h3>
+                <button class="btn-icon" onclick="closeAddModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Product Name <span class="required">*</span></label>
+                            <input type="text" id="productName" placeholder="Enter product name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>SKU <span class="required">*</span></label>
+                            <input type="text" id="productSKU" placeholder="e.g., SKU-001" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category <span class="required">*</span></label>
+                            <select id="productCategory" required>
+                                <option value="">Select Category</option>
+                                <option value="smartphones">Smartphones</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="tablets">Tablets</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Brand <span class="required">*</span></label>
+                            <select id="productBrand" required>
+                                <option value="">Select Brand</option>
+                                <option value="apple">Apple</option>
+                                <option value="samsung">Samsung</option>
+                                <option value="xiaomi">Xiaomi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Price (GH₵) <span class="required">*</span></label>
+                            <input type="number" id="productPrice" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity <span class="required">*</span></label>
+                            <input type="number" id="productQuantity" placeholder="0" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Boxes</label>
+                            <input type="number" id="productBoxes" placeholder="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Per Box</label>
+                            <input type="number" id="productPerBox" placeholder="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Reorder Level <span class="required">*</span></label>
+                            <input type="number" id="productReorderLevel" placeholder="10" min="1" value="10" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Description</label>
+                            <textarea id="productDescription" placeholder="Product description..." rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAddModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProduct()">Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View/Edit Products Modal -->
+    <div class="modal-overlay" id="viewProductsModal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3>View & Edit Products</h3>
+                <button class="btn-icon" onclick="closeViewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>SKU</th>
+                                <th>Category</th>
+                                <th>Brand</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="viewProductsTableBody">
+                            <!-- Products will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div class="modal-overlay" id="editProductModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Product</h3>
+                <button class="btn-icon" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm">
+                    <input type="hidden" id="editProductId">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Product Name <span class="required">*</span></label>
+                            <input type="text" id="editProductName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>SKU <span class="required">*</span></label>
+                            <input type="text" id="editProductSKU" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category <span class="required">*</span></label>
+                            <select id="editProductCategory" required>
+                                <option value="smartphones">Smartphones</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="tablets">Tablets</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Brand <span class="required">*</span></label>
+                            <select id="editProductBrand" required>
+                                <option value="apple">Apple</option>
+                                <option value="samsung">Samsung</option>
+                                <option value="xiaomi">Xiaomi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Price (GH₵) <span class="required">*</span></label>
+                            <input type="number" id="editProductPrice" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity <span class="required">*</span></label>
+                            <input type="number" id="editProductQuantity" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Boxes</label>
+                            <input type="number" id="editProductBoxes" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Per Box</label>
+                            <input type="number" id="editProductPerBox" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Reorder Level <span class="required">*</span></label>
+                            <input type="number" id="editProductReorderLevel" min="1" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Description</label>
+                            <textarea id="editProductDescription" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="updateProduct()">Update Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal-overlay" id="addCategoryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add Category</h3>
+                <button class="btn-icon" onclick="closeCategoryModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoryForm">
+                    <div class="form-group">
+                        <label>Category Name <span class="required">*</span></label>
+                        <input type="text" id="categoryName" placeholder="Enter category name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="categoryDescription" placeholder="Category description..." rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeCategoryModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Brand Modal -->
+    <div class="modal-overlay" id="addBrandModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add Brand</h3>
+                <button class="btn-icon" onclick="closeBrandModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addBrandForm">
+                    <div class="form-group">
+                        <label>Brand Name <span class="required">*</span></label>
+                        <input type="text" id="brandName" placeholder="Enter brand name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="brandDescription" placeholder="Brand description..." rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeBrandModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveBrand()">Save Brand</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'store/JS/inventory.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Sales | Prime Accessories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'store/CSS/sales.css' %}">
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser && !window.location.pathname.includes('/login.html') && !window.location.pathname.includes('/signup.html')) {
+            window.location.href = '/login.html';
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>Prime Accessories</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="{% url 'index' %}" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="{% url 'pos' %}" class="nav-item"><i class="fas fa-cash-register"></i> POS</a>
+                <a href="{% url 'inventory_list' %}" class="nav-item"><i class="fas fa-boxes"></i> Inventory</a>
+                <a href="{% url 'sales_list' %}" class="nav-item active"><i class="fas fa-chart-line"></i> Sales</a>
+                <a href="{% url 'reports_list' %}" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
+                <a href="{% url 'settings' %}" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
+            </nav>
+            <div class="user-profile">
+                <button onclick="logout()" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar animate-fade-in">
+                <h1><i class="fas fa-chart-line"></i> Sales Management</h1>
+                <div class="header-actions">
+                    <button class="btn btn-export" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                    <button class="btn btn-print" onclick="printSales()">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card animate-slide-up" style="animation-delay: 0.1s">
+                    <div class="stat-icon revenue">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Sales (Today)</h3>
+                        <div class="stat-value">GH₵ 2,450.00</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> 12% vs yesterday
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card animate-slide-up" style="animation-delay: 0.2s">
+                    <div class="stat-icon transactions">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Transactions</h3>
+                        <div class="stat-value">12</div>
+                        <div class="stat-desc">Today</div>
+                    </div>
+                </div>
+                <div class="stat-card animate-slide-up" style="animation-delay: 0.3s">
+                    <div class="stat-icon avg">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Average Order Value</h3>
+                        <div class="stat-value">GH₵ 204.17</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> 5% vs last week
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card animate-slide-up" style="animation-delay: 0.4s">
+                    <div class="stat-icon refunds">
+                        <i class="fas fa-undo"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Refunds</h3>
+                        <div class="stat-value">GH₵ 0.00</div>
+                        <div class="stat-desc">No refunds today</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="card filter-section animate-fade-in">
+                <div class="filter-header">
+                    <h3><i class="fas fa-filter"></i> Filters</h3>
+                    <button class="btn btn-clear" onclick="clearFilters()">
+                        <i class="fas fa-undo"></i> Clear All
+                    </button>
+                </div>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label><i class="fas fa-search"></i> Search</label>
+                        <input type="text" id="searchInput" placeholder="Search receipts...">
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-calendar"></i> Date Range</label>
+                        <select id="dateRange">
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month">Last 30 Days</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-credit-card"></i> Payment Method</label>
+                        <select id="paymentMethod">
+                            <option value="all">All Methods</option>
+                            <option value="cash">Cash</option>
+                            <option value="momo">Mobile Money</option>
+                            <option value="bank">Bank Transfer</option>
+                            <option value="card">Card</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-check-circle"></i> Status</label>
+                        <select id="status">
+                            <option value="all">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="pending">Pending</option>
+                            <option value="refunded">Refunded</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-apply" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Table -->
+            <div class="card table-card animate-fade-in">
+                <div class="card-header">
+                    <h3><i class="fas fa-list"></i> All Sales Transactions</h3>
+                    <div class="table-stats">
+                        <span class="badge badge-primary">Total: 156</span>
+                        <span class="badge badge-success">Completed: 142</span>
+                        <span class="badge badge-warning">Pending: 8</span>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" class="select-all" onclick="toggleSelectAll()">
+                                </th>
+                                <th>Receipt #</th>
+                                <th>Date & Time</th>
+                                <th>Cashier</th>
+                                <th>Payment Method</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesTableBody">
+                            <tr class="animate-row">
+                                <td><input type="checkbox" class="row-checkbox"></td>
+                                <td><strong>RCP-001</strong></td>
+                                <td>Feb 15, 2026 10:30 AM</td>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-sm">JD</div>
+                                        <span>Eric Johnson</span>
+                                    </div>
+                                </td>
+                                <td><span class="payment-badge cash"><i class="fas fa-money-bill"></i> Cash</span></td>
+                                <td>3</td>
+                                <td><strong>GH₵ 1,250.00</strong></td>
+                                <td><span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon btn-view" title="View Details" onclick="viewSale('RCP-001')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn-icon btn-print-small" title="Print" onclick="printSale('RCP-001')">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+                                        <button class="btn-icon btn-more" title="More">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="animate-row" style="animation-delay: 0.1s">
+                                <td><input type="checkbox" class="row-checkbox"></td>
+                                <td><strong>RCP-002</strong></td>
+                                <td>Feb 15, 2026 09:45 AM</td>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-sm">JS</div>
+                                        <span>Martin Koye</span>
+                                    </div>
+                                </td>
+                                <td><span class="payment-badge momo"><i class="fas fa-mobile-alt"></i> MTN MoMo</span></td>
+                                <td>2</td>
+                                <td><strong>GH₵ 850.00</strong></td>
+                                <td><span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon btn-view" title="View Details" onclick="viewSale('RCP-002')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn-icon btn-print-small" title="Print" onclick="printSale('RCP-002')">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+                                        <button class="btn-icon btn-more" title="More">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="animate-row" style="animation-delay: 0.2s">
+                                <td><input type="checkbox" class="row-checkbox"></td>
+                                <td><strong>RCP-003</strong></td>
+                                <td>Feb 15, 2026 08:20 AM</td>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-sm">JD</div>
+                                        <span>Martin Luthur</span>
+                                    </div>
+                                </td>
+                                <td><span class="payment-badge bank"><i class="fas fa-university"></i> Bank</span></td>
+                                <td>1</td>
+                                <td><strong>GH₵ 450.00</strong></td>
+                                <td><span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon btn-view" title="View Details" onclick="viewSale('RCP-003')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn-icon btn-print-small" title="Print" onclick="printSale('RCP-003')">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+                                        <button class="btn-icon btn-more" title="More">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <span class="showing-info">Showing 1 to 3 of 156 entries</span>
+                    <div class="pages">
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn">3</button>
+                        <span class="page-ellipsis">...</span>
+                        <button class="page-btn">52</button>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer animate-fade-in">
+                <p>&copy; 2026 Prime Accessories POS System. All rights reserved.</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- View Sale Modal -->
+    <div class="modal-overlay" id="viewSaleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-receipt"></i> Sale Details - <span id="modalReceiptNumber">RCP-000</span></h3>
+                <button class="btn-icon" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="sale-details">
+                    <div class="detail-row">
+                        <span class="label">Receipt Number:</span>
+                        <span class="value" id="detailReceiptNumber">RCP-001</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Date & Time:</span>
+                        <span class="value">Feb 15, 2026 10:30 AM</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Cashier:</span>
+                        <span class="value">Chaterz</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">Cash</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value"><span class="status-badge completed">Completed</span></span>
+                    </div>
+                </div>
+                <div class="items-section">
+                    <h4>Items Purchased</h4>
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>iPhone 15 Pro</td>
+                                <td>1</td>
+                                <td>GH₵ 12,500.00</td>
+                                <td>GH₵ 12,500.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="totals-section">
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span>GH₵ 1,190.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Tax (5%):</span>
+                        <span>GH₵ 60.00</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span>Total:</span>
+                        <span>GH₵ 1,250.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">Close</button>
+                <button class="btn btn-primary" onclick="printModalReceipt()">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operation successful</span>
+    </div>
+
+    <script src="{% static 'store/JS/sales.js' %}"></script>
+</body>
+</html>

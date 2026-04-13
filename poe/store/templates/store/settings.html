@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Settings | Prime Accessories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'store/CSS/settings.css' %}">
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser && !window.location.pathname.includes('/login.html') && !window.location.pathname.includes('/signup.html')) {
+            window.location.href = '/login.html';
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>Prime Accessories</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="{% url 'index' %}" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="{% url 'pos' %}" class="nav-item"><i class="fas fa-cash-register"></i> POS</a>
+                <a href="{% url 'inventory_list' %}" class="nav-item"><i class="fas fa-boxes"></i> Inventory</a>
+                <a href="{% url 'sales_list' %}" class="nav-item"><i class="fas fa-chart-line"></i> Sales</a>
+                <a href="{% url 'reports_list' %}" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
+                <a href="{% url 'settings' %}" class="nav-item active"><i class="fas fa-cog"></i> Settings</a>
+            </nav>
+            <div class="user-profile">
+                <!-- <div class="avatar">JD</div> -->
+                <div class="user-info">
+                    <button onclick="logout()" class="btn btn-outline btn-sm">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                    <!-- <span class="role">Admin</span> -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar animate-fade-in">
+                <h1><i class="fas fa-cog fa-spin"></i> System Settings</h1>
+            </header>
+
+            <!-- Settings Grid -->
+            <div class="settings-grid">
+                <!-- General Settings -->
+                <div class="settings-card animate-slide-up" style="animation-delay: 0.1s">
+                    <div class="card-header gradient-blue">
+                        <i class="fas fa-store"></i>
+                        <h3>General Settings</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label><i class="fas fa-building"></i> Store Name</label>
+                            <input type="text" value="Prime Accessories" class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Store Address</label>
+                            <textarea class="input-field" rows="3">123 High Street, Accra, Ghana</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Phone Number</label>
+                            <input type="tel" value="+233 24 123 4567" class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> Email Address</label>
+                            <input type="email" value="info@primeaccessories.com" class="input-field">
+                        </div>
+                        <button class="btn btn-primary btn-block">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tax Settings -->
+                <div class="settings-card animate-slide-up" style="animation-delay: 0.2s">
+                    <div class="card-header gradient-purple">
+                        <i class="fas fa-percentage"></i>
+                        <h3>Tax Configuration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label><i class="fas fa-calculator"></i> Tax Rate (%)</label>
+                            <input type="number" value="5" step="0.01" class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-tag"></i> Tax Name</label>
+                            <input type="text" value="VAT" class="input-field">
+                        </div>
+                        <div class="toggle-group">
+                            <label class="toggle-label">
+                                <span>Include Tax in Prices</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </label>
+                        </div>
+                        <button class="btn btn-purple btn-block">
+                            <i class="fas fa-save"></i> Update Tax Settings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Printer Settings -->
+                <div class="settings-card animate-slide-up" style="animation-delay: 0.3s">
+                    <div class="card-header gradient-green">
+                        <i class="fas fa-print"></i>
+                        <h3>Printer Settings</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label><i class="fas fa-print"></i> Printer Name</label>
+                            <select class="input-field">
+                                <option>Thermal Printer (USB)</option>
+                                <option>Network Printer</option>
+                                <option>Bluetooth Printer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-file-alt"></i> Receipt Header</label>
+                            <textarea class="input-field" rows="2">PRIME ACCESSORIES</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-align-center"></i> Receipt Footer</label>
+                            <textarea class="input-field" rows="2">Thank you for your purchase!</textarea>
+                        </div>
+                        <div class="toggle-group">
+                            <label class="toggle-label">
+                                <span>Auto-print Receipts</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </label>
+                        </div>
+                        <button class="btn btn-green btn-block">
+                            <i class="fas fa-save"></i> Configure Printer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- User Management -->
+                <div class="settings-card animate-slide-up" style="animation-delay: 0.4s">
+                    <div class="card-header gradient-orange">
+                        <i class="fas fa-users"></i>
+                        <h3>User Management</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="user-list">
+                            <div class="user-item">
+                                <div class="user-avatar-large gradient-blue">JD</div>
+                                <div class="user-details">
+                                    <h4>John Doe</h4>
+                                    <span class="role-badge">Admin</span>
+                                </div>
+                                <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                            </div>
+                            <div class="user-item">
+                                <div class="user-avatar-large gradient-purple">JS</div>
+                                <div class="user-details">
+                                    <h4>Jane Smith</h4>
+                                    <span class="role-badge">Cashier</span>
+                                </div>
+                                <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                            </div>
+                            <div class="user-item">
+                                <div class="user-avatar-large gradient-green">EL</div>
+                                <div class="user-details">
+                                    <h4>EL Lhord</h4>
+                                    <span class="role-badge">Cashier</span>
+                                </div>
+                                <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                            </div>
+                        </div>
+                        <button class="btn btn-orange btn-block">
+                            <i class="fas fa-user-plus"></i> Add New User
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="settings-card animate-slide-up" style="animation-delay: 0.5s">
+                    <div class="card-header gradient-red">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Security</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Change Password</label>
+                            <input type="password" placeholder="Current Password" class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" placeholder="New Password" class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" placeholder="Confirm New Password" class="input-field">
+                        </div>
+                        <div class="toggle-group">
+                            <label class="toggle-label">
+                                <span>Enable Two-Factor Authentication</span>
+                                <label class="switch">
+                                    <input type="checkbox">
+                                    <span class="slider"></span>
+                                </label>
+                            </label>
+                        </div>
+                        <button class="btn btn-red btn-block">
+                            <i class="fas fa-key"></i> Update Security
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Backup & Restore -->
+                <div class="settings-card animate-slide-up" style="animation-delay: 0.6s">
+                    <div class="card-header gradient-teal">
+                        <i class="fas fa-database"></i>
+                        <h3>Backup & Restore</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="backup-info">
+                            <div class="info-item">
+                                <i class="fas fa-clock"></i>
+                                <div>
+                                    <strong>Last Backup</strong>
+                                    <p>2 hours ago</p>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-hdd"></i>
+                                <div>
+                                    <strong>Database Size</strong>
+                                    <p>45.2 MB</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn btn-teal">
+                                <i class="fas fa-download"></i> Backup Now
+                            </button>
+                            <button class="btn btn-outline">
+                                <i class="fas fa-upload"></i> Restore
+                            </button>
+                        </div>
+                        <div class="toggle-group">
+                            <label class="toggle-label">
+                                <span>Auto Backup Daily</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer animate-fade-in">
+                <p>&copy; 2026 Prime Accessories POS System. All rights reserved.</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Settings saved successfully!</span>
+    </div>
+
+    <script src="{% static 'store/JS/settings.js' %}"></script>
+</body>
+</html>

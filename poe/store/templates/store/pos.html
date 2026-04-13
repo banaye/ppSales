@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Point of Sale | Prime Accessories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'store/CSS/pos.css' %}">
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser && !window.location.pathname.includes('/login.html') && !window.location.pathname.includes('/signup.html')) {
+            window.location.href = '/login.html';
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2><i class="fas fa-mobile-alt"></i> Prime Accessories</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="{% url 'index' %}" class="nav-item"><i class="fas fa-home"></i> <span>Dashboard</span></a>
+                <a href="{% url 'pos' %}" class="nav-item active"><i class="fas fa-cash-register"></i> <span>POS</span></a>
+                <a href="{% url 'inventory_list' %}" class="nav-item"><i class="fas fa-boxes"></i> <span>Inventory</span></a>
+                <a href="{% url 'sales_list' %}" class="nav-item"><i class="fas fa-chart-line"></i> <span>Sales</span></a>
+                <a href="{% url 'reports_list' %}" class="nav-item"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
+                <a href="{% url 'settings' %}" class="nav-item"><i class="fas fa-cog"></i> <span>Settings</span></a>
+            </nav>
+            <div class="user-profile">
+                <button onclick="logout()" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="header-left">
+                    <h1><i class="fas fa-cash-register"></i> Point of Sale</h1>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="productSearch" placeholder="Search products by name or SKU...">
+                    <button class="btn-icon"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="header-info">
+                    <span class="date-time" id="currentDateTime"></span>
+                </div>
+            </header>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label><i class="fas fa-folder"></i> Category</label>
+                    <select id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        <option value="smartphones">Smartphones</option>
+                        <option value="accessories">Accessories</option>
+                        <option value="tablets">Tablets</option>
+                        <option value="chargers">Chargers & Cables</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-tag"></i> Brand</label>
+                    <select id="brandFilter">
+                        <option value="all">All Brands</option>
+                        <option value="apple">Apple</option>
+                        <option value="samsung">Samsung</option>
+                        <option value="xiaomi">Xiaomi</option>
+                        <option value="techno">Techno</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-box"></i> Stock Status</label>
+                    <select id="stockFilter">
+                        <option value="all">All Status</option>
+                        <option value="in-stock">In Stock</option>
+                        <option value="low-stock">Low Stock</option>
+                        <option value="out-stock">Out of Stock</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-outline" id="clearFilters">
+                        <i class="fas fa-redo"></i> Clear Filters
+                    </button>
+                    <button class="btn btn-primary" id="applyFilters">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-section">
+                <div class="products-header">
+                    <h3><i class="fas fa-th"></i> Products</h3>
+                    <span class="product-count" id="productCount">0 products</span>
+                </div>
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be dynamically loaded here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Floating Cart Button -->
+        <div class="floating-cart" id="floatingCart">
+            <div class="cart-icon-wrapper">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count" id="cartCount">0</span>
+            </div>
+            <span class="cart-label">Cart</span>
+        </div>
+
+        <!-- Cart Panel (Hidden by default) -->
+        <div class="cart-panel" id="cartPanel">
+            <div class="cart-header">
+                <h3><i class="fas fa-shopping-cart"></i> Current Order</h3>
+                <div class="cart-actions">
+                    <button class="btn-icon" id="clearCart" title="Clear Cart">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn-icon" id="closeCart" title="Close Cart">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="cart-items" id="cartItems">
+                <div class="cart-empty">
+                    <i class="fas fa-shopping-cart"></i>
+                    <p>Cart is empty</p>
+                    <span>Select products to add to cart</span>
+                </div>
+            </div>
+
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="subtotal">GH₵ 0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (5%)</span>
+                    <span id="tax">GH₵ 0.00</span>
+                </div>
+                <div class="summary-row discount-row">
+                    <span>Discount</span>
+                    <div class="discount-input">
+                        <input type="number" id="discountInput" placeholder="0" min="0" max="100">
+                        <span>%</span>
+                    </div>
+                </div>
+                <div class="summary-row discount-amount">
+                    <span>Discount Amount</span>
+                    <span id="discountAmount">-GH₵ 0.00</span>
+                </div>
+                <div class="summary-row total-row">
+                    <span>Grand Total</span>
+                    <span id="grandTotal">GH₵ 0.00</span>
+                </div>
+            </div>
+
+            <div class="cart-actions-section">
+                <button class="btn btn-primary btn-block" id="processPayment" disabled>
+                    <i class="fas fa-credit-card"></i> Process Payment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-credit-card"></i> Process Payment</h3>
+                <button class="btn-icon modal-close" id="closePaymentModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-amount-display">
+                    <label>Amount to Pay</label>
+                    <div class="amount" id="paymentAmount">GH₵ 0.00</div>
+                </div>
+
+                <div class="payment-section">
+                    <label><i class="fas fa-wallet"></i> Select Payment Method</label>
+                    <div class="payment-methods-grid">
+                        <button class="payment-method-btn" data-method="cash">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Cash</span>
+                        </button>
+                        <button class="payment-method-btn" data-method="momo">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Mobile Money</span>
+                        </button>
+                        <button class="payment-method-btn" data-method="bank">
+                            <i class="fas fa-university"></i>
+                            <span>Bank Transfer</span>
+                        </button>
+                        <button class="payment-method-btn" data-method="card">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Card</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="payment-details" id="paymentDetails">
+                    <!-- Cash Payment -->
+                    <div class="payment-detail-group" id="cashDetails" style="display: none;">
+                        <div class="form-group">
+                            <label for="name">name
+                                <input type="text"
+                                    id="name"
+                                    placeholder="Enter customer name"
+                                    required>
+                            </label>
+                            <label>Amount Received <span class="required">*</span></label>
+                            <input type="number" id="amountReceived" placeholder="Enter amount received" step="0.01">
+                            <div class="change-display">
+                                <span>Change to Return:</span>
+                                <strong id="changeAmount">GH₵ 0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Money Payment -->
+                    <div class="payment-detail-group" id="momoDetails" style="display: none;">
+                        <div class="form-group">
+                            <label>Select Mobile Money Provider <span class="required">*</span></label>
+                            <select id="momoProvider">
+                                <option value="">-- Choose Provider --</option>
+                                <option value="mtn">MTN MoMo</option>
+                                <option value="vodafone">Vodafone Cash</option>
+                                <option value="airteltigo">AirtelTigo Money</option>
+                                <option value="at">AT Money</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Phone Number <span class="required">*</span></label>
+                            <input type="tel" id="momoPhone" placeholder="024 XXX XXXX" pattern="[0-9]{10}">
+                        </div>
+                        <div class="form-group">
+                            <label>Reference Number</label>
+                            <input type="text" id="momoRef" placeholder="Transaction ID">
+                        </div>
+                    </div>
+
+                    <!-- Bank Transfer Payment -->
+                    <div class="payment-detail-group" id="bankDetails" style="display: none;">
+                        <div class="form-group">
+                            <label>Select Bank <span class="required">*</span></label>
+                            <select id="bankName">
+                                <option value="">-- Choose Bank --</option>
+                                <option value="gcb">Ghana Commercial Bank (GCB)</option>
+                                <option value="ecobank">Ecobank Ghana</option>
+                                <option value="stanbic">Stanbic Bank</option>
+                                <option value="absa">Absa Bank</option>
+                                <option value="fidelity">Fidelity Bank</option>
+                                <option value="zenith">Zenith Bank</option>
+                                <option value="access">Access Bank</option>
+                                <option value="calbank">CalBank</option>
+                                <option value="umb">Universal Merchant Bank (UMB)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Account Number <span class="required">*</span></label>
+                            <input type="text" id="bankAccount" placeholder="Customer's account number">
+                        </div>
+                        <div class="form-group">
+                            <label>Account Holder Name</label>
+                            <input type="text" id="bankHolder" placeholder="Optional">
+                        </div>
+                    </div>
+
+                    <!-- Card Payment -->
+                    <div class="payment-detail-group" id="cardDetails" style="display: none;">
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <input type="text" id="cardNumber" placeholder="XXXX XXXX XXXX XXXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Card Holder Name</label>
+                            <input type="text" id="cardHolder" placeholder="Name on card">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="printReceipt" checked>
+                        <span><i class="fas fa-print"></i> Print Receipt (Thermal Printer)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelPayment">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="confirmPayment" disabled>
+                    <i class="fas fa-check-circle"></i> Confirm & Print
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal-overlay" id="receiptModal">
+        <div class="modal-content receipt-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-receipt"></i> Receipt Preview</h3>
+                <button class="btn-icon modal-close" id="closeReceiptModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="receipt-container" id="receiptContainer">
+                    <div class="receipt-header">
+                        <h2>PRIME ACCESSORIES</h2>
+                        <p>123 High Street, Accra, Ghana</p>
+                        <p>Tel: +233 24 123 4567</p>
+                        <p>Email: info@primeaccessories.com</p>
+                    </div>
+                    <div class="receipt-info">
+                        <div class="receipt-row">
+                            <span>Receipt #:</span>
+                            <strong id="receiptNumber">RCP-000000</strong>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Date:</span>
+                            <span id="receiptDate">01/01/2026</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Time:</span>
+                            <span id="receiptTime">12:00:00</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Cashier:</span>
+                            <span id="receiptCashier">Evan</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Payment:</span>
+                            <span id="receiptPayment">Cash</span>
+                        </div>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div class="receipt-items">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="receiptItemsBody">
+                                <!-- Items will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div class="receipt-totals">
+                        <div class="receipt-row">
+                            <span>Subtotal:</span>
+                            <span id="receiptSubtotal">GH₵ 0.00</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Tax (5%):</span>
+                            <span id="receiptTax">GH₵ 0.00</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Discount:</span>
+                            <span id="receiptDiscount">-GH₵ 0.00</span>
+                        </div>
+                        <div class="receipt-row total">
+                            <span>TOTAL:</span>
+                            <strong id="receiptTotal">GH₵ 0.00</strong>
+                        </div>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div class="receipt-footer">
+                        <p class="thank-you">Thank you for your purchase!</p>
+                        <p>Items can be returned within 7 days with original receipt</p>
+                        <div class="barcode">
+                            <div class="barcode-bars" id="receiptBarcode"></div>
+                            <span id="receiptBarcodeNumber">RCP000000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="closeReceiptBtn">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button class="btn btn-primary" id="printReceiptBtn">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" id="successMessage">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h3>Payment Successful!</h3>
+        <p>Receipt has been printed</p>
+        <p class="receipt-number" id="successReceiptNumber">RCP-000000</p>
+        <button class="btn btn-primary" id="newSale">
+            <i class="fas fa-plus"></i> New Sale
+        </button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMessage">Notification message</span>
+    </div>
+
+    <script src="{% static 'store/JS/pos.js' %}"></script>
+</body>
+</html>
