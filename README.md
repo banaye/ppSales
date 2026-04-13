@@ -19,3 +19,14 @@ Sales reports
 -Python 3.10+
 -pip
 
+## Installation
+```bash
+    git clone https://github.com/banaye/ppSales.git
+cd poe
+pip install -r requirements.txt
+
+```
+## Setup
+- python manage.py migrate
+- python manage.py createsuperuser
+-python manage.py runserver
